@@ -10,10 +10,10 @@ const ReservationTimer = ({ expiresAt, onExpire }) => {
     }
   }, [isExpired, onExpire]);
 
-  const getTimerColor = () => {
-    if (minutes < 1) return 'text-red-600 bg-red-50 border-red-200';
-    if (minutes < 3) return 'text-orange-600 bg-orange-50 border-orange-200';
-    return 'text-blue-600 bg-blue-50 border-blue-200';
+  const getTimerStyles = () => {
+    if (minutes < 1) return 'from-red-500/20 to-red-600/20 border-red-500/30 text-red-400';
+    if (minutes < 3) return 'from-orange-500/20 to-orange-600/20 border-orange-500/30 text-orange-400';
+    return 'from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-400';
   };
 
   const getIcon = () => {
@@ -33,7 +33,7 @@ const ReservationTimer = ({ expiresAt, onExpire }) => {
 
   if (isExpired) {
     return (
-      <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-100 border border-red-200 text-red-700">
+      <div className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 text-red-400">
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -43,10 +43,10 @@ const ReservationTimer = ({ expiresAt, onExpire }) => {
   }
 
   return (
-    <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg border ${getTimerColor()}`}>
+    <div className={`inline-flex items-center space-x-3 px-5 py-2.5 rounded-full bg-gradient-to-r border ${getTimerStyles()}`}>
       {getIcon()}
-      <span className="font-semibold text-lg font-mono">{formattedTime}</span>
-      <span className="text-sm">remaining</span>
+      <span className="font-bold text-xl font-mono tracking-wider">{formattedTime}</span>
+      <span className="text-sm opacity-70">remaining</span>
     </div>
   );
 };

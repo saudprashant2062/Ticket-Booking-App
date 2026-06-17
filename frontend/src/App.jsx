@@ -11,7 +11,7 @@ import EventDetailsPage from './pages/EventDetailsPage.jsx';
 const App = () => {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-black text-white">
         <Navbar />
         <main>
           <Routes>

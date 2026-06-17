@@ -6,7 +6,6 @@ const EventCard = ({ event }) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
-      year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -14,44 +13,62 @@ const EventCard = ({ event }) => {
     });
   };
 
-  const isUpcoming = new Date(event.dateTime) > new Date();
+  // Generate a consistent gradient based on event name
+  const getGradient = (name) => {
+    const gradients = [
+      'from-purple-600 to-pink-600',
+      'from-blue-600 to-purple-600',
+      'from-pink-600 to-red-600',
+      'from-indigo-600 to-blue-600',
+      'from-emerald-600 to-teal-600',
+      'from-orange-600 to-red-600',
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return gradients[Math.abs(hash) % gradients.length];
+  };
 
   return (
-    <div className="card overflow-hidden">
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isUpcoming ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-            {isUpcoming ? 'Upcoming' : 'Past'}
+    <div className="card group">
+      {/* Image Placeholder with Gradient */}
+      <div className={`h-48 bg-gradient-to-br ${getGradient(event.name)} relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all"></div>
+        <div className="absolute bottom-4 left-4">
+          <span className="bg-black/50 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
+            {event.totalSeats} seats
           </span>
         </div>
+      </div>
 
-        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+      <div className="p-5">
+        {/* Date */}
+        <div className="flex items-center text-white/50 mb-3 text-sm">
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          {formatDate(event.dateTime)}
+        </div>
+
+        {/* Event Name */}
+        <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
           {event.name}
         </h3>
 
-        <div className="flex items-center text-gray-600 mb-2">
-          <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="text-sm">{formatDate(event.dateTime)}</span>
-        </div>
-
-        <div className="flex items-center text-gray-600 mb-4">
+        {/* Venue */}
+        <div className="flex items-center text-white/40 mb-4 text-sm">
           <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span className="text-sm line-clamp-1">{event.venue}</span>
+          <span className="line-clamp-1">{event.venue}</span>
         </div>
 
-        <div className="flex items-center text-gray-500 mb-4">
-          <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          <span className="text-sm">{event.totalSeats} seats available</span>
-        </div>
-
-        <Link to={`/events/${event._id}`} className="block w-full text-center btn-primary">
+        {/* Action Button */}
+        <Link
+          to={`/events/${event._id}`}
+          className="block w-full text-center py-2.5 rounded-lg border border-white/10 text-white/70 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all text-sm font-medium"
+        >
           View Seats
         </Link>
       </div>

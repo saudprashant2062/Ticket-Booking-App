@@ -5,217 +5,164 @@ import Reservation from '../models/Reservation.js';
 const EXPIRY_MINUTES = parseInt(process.env.RESERVATION_EXPIRY_MINUTES) || 10;
 
 export const createReservation = async (userId, eventId, seatNumbers) => {
-  const session = await mongoose.startSession();
+  // Check if user already has active reservation
+  const existingReservation = await Reservation.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    eventId: new mongoose.Types.ObjectId(eventId),
+    status: 'active',
+    expiresAt: { $gt: new Date() },
+  });
 
-  try {
-    let reservation;
-
-    await session.withTransaction(async () => {
-      const lockedSeats = [];
-
-      for (const seatNumber of seatNumbers) {
-        const seat = await Seat.findOneAndUpdate(
-          {
-            eventId: new mongoose.Types.ObjectId(eventId),
-            seatNumber: seatNumber,
-            status: 'available',
-          },
-          { status: 'reserved' },
-          { session, new: true }
-        );
-
-        if (!seat) {
-          throw new Error(`Seat ${seatNumber} is no longer available`);
-        }
-
-        lockedSeats.push(seat);
-      }
-
-      const existingReservation = await Reservation.findOne({
-        userId: new mongoose.Types.ObjectId(userId),
-        eventId: new mongoose.Types.ObjectId(eventId),
-        status: 'active',
-        expiresAt: { $gt: new Date() },
-      }).session(session);
-
-      if (existingReservation) {
-        throw new Error('You already have an active reservation for this event');
-      }
-
-      const expiresAt = new Date(Date.now() + EXPIRY_MINUTES * 60 * 1000);
-
-      reservation = await Reservation.create(
-        [
-          {
-            userId: new mongoose.Types.ObjectId(userId),
-            eventId: new mongoose.Types.ObjectId(eventId),
-            seatNumbers,
-            expiresAt,
-            status: 'active',
-          },
-        ],
-        { session }
-      );
-
-      reservation = reservation[0];
-    });
-
-    return reservation;
-  } catch (error) {
-    throw error;
-  } finally {
-    await session.endSession();
+  if (existingReservation) {
+    throw new Error('You already have an active reservation for this event');
   }
+
+  // Atomically lock each seat
+  const lockedSeats = [];
+  for (const seatNumber of seatNumbers) {
+    const seat = await Seat.findOneAndUpdate(
+      {
+        eventId: new mongoose.Types.ObjectId(eventId),
+        seatNumber: seatNumber,
+        status: 'available',
+      },
+      { status: 'reserved' },
+      { new: true }
+    );
+
+    if (!seat) {
+      // Release any seats we already locked
+      for (const locked of lockedSeats) {
+        await Seat.findOneAndUpdate(
+          { _id: locked._id },
+          { status: 'available' }
+        );
+      }
+      throw new Error(`Seat ${seatNumber} is no longer available`);
+    }
+
+    lockedSeats.push(seat);
+  }
+
+  // Create reservation
+  const expiresAt = new Date(Date.now() + EXPIRY_MINUTES * 60 * 1000);
+  const reservation = await Reservation.create({
+    userId: new mongoose.Types.ObjectId(userId),
+    eventId: new mongoose.Types.ObjectId(eventId),
+    seatNumbers,
+    expiresAt,
+    status: 'active',
+  });
+
+  return reservation;
 };
 
 export const confirmBooking = async (userId, reservationId) => {
-  const session = await mongoose.startSession();
+  const reservation = await Reservation.findOne({
+    _id: new mongoose.Types.ObjectId(reservationId),
+    userId: new mongoose.Types.ObjectId(userId),
+    status: 'active',
+  });
 
-  try {
-    let result;
+  if (!reservation) {
+    throw new Error('Reservation not found or already processed');
+  }
 
-    await session.withTransaction(async () => {
-      const reservation = await Reservation.findOne({
-        _id: new mongoose.Types.ObjectId(reservationId),
-        userId: new mongoose.Types.ObjectId(userId),
-        status: 'active',
-      }).session(session);
+  if (new Date() > reservation.expiresAt) {
+    // Mark as expired and release seats
+    reservation.status = 'expired';
+    await reservation.save();
 
-      if (!reservation) {
-        throw new Error('Reservation not found or already processed');
-      }
-
-      if (new Date() > reservation.expiresAt) {
-        reservation.status = 'expired';
-        await reservation.save({ session });
-
-        await Seat.updateMany(
-          {
-            eventId: reservation.eventId,
-            seatNumber: { $in: reservation.seatNumbers },
-            status: 'reserved',
-          },
-          { status: 'available' },
-          { session }
-        );
-
-        throw new Error('Reservation has expired. Please select seats again.');
-      }
-
-      const seats = await Seat.find({
+    await Seat.updateMany(
+      {
         eventId: reservation.eventId,
         seatNumber: { $in: reservation.seatNumbers },
-      }).session(session);
+        status: 'reserved',
+      },
+      { status: 'available' }
+    );
 
-      const unavailableSeats = seats.filter(
-        (seat) => seat.status !== 'reserved'
-      );
-
-      if (unavailableSeats.length > 0) {
-        throw new Error(
-          `Seats ${unavailableSeats.map((s) => s.seatNumber).join(', ')} are no longer reserved`
-        );
-      }
-
-      await Seat.updateMany(
-        {
-          eventId: reservation.eventId,
-          seatNumber: { $in: reservation.seatNumbers },
-        },
-        { status: 'booked' },
-        { session }
-      );
-
-      reservation.status = 'completed';
-      await reservation.save({ session });
-
-      result = reservation;
-    });
-
-    return result;
-  } catch (error) {
-    throw error;
-  } finally {
-    await session.endSession();
+    throw new Error('Reservation has expired. Please select seats again.');
   }
+
+  // Verify seats are still reserved
+  const seats = await Seat.find({
+    eventId: reservation.eventId,
+    seatNumber: { $in: reservation.seatNumbers },
+  });
+
+  const unavailableSeats = seats.filter((seat) => seat.status !== 'reserved');
+
+  if (unavailableSeats.length > 0) {
+    throw new Error(
+      `Seats ${unavailableSeats.map((s) => s.seatNumber).join(', ')} are no longer reserved`
+    );
+  }
+
+  // Mark seats as booked
+  await Seat.updateMany(
+    {
+      eventId: reservation.eventId,
+      seatNumber: { $in: reservation.seatNumbers },
+    },
+    { status: 'booked' }
+  );
+
+  // Update reservation
+  reservation.status = 'completed';
+  await reservation.save();
+
+  return reservation;
 };
 
 export const releaseExpiredReservations = async () => {
-  const session = await mongoose.startSession();
+  const expiredReservations = await Reservation.find({
+    status: 'active',
+    expiresAt: { $lte: new Date() },
+  });
 
-  try {
-    let releasedCount = 0;
+  let releasedCount = 0;
+  for (const reservation of expiredReservations) {
+    await Seat.updateMany(
+      {
+        eventId: reservation.eventId,
+        seatNumber: { $in: reservation.seatNumbers },
+        status: 'reserved',
+      },
+      { status: 'available' }
+    );
 
-    await session.withTransaction(async () => {
-      const expiredReservations = await Reservation.find({
-        status: 'active',
-        expiresAt: { $lte: new Date() },
-      }).session(session);
+    reservation.status = 'expired';
+    await reservation.save();
 
-      for (const reservation of expiredReservations) {
-        await Seat.updateMany(
-          {
-            eventId: reservation.eventId,
-            seatNumber: { $in: reservation.seatNumbers },
-            status: 'reserved',
-          },
-          { status: 'available' },
-          { session }
-        );
-
-        reservation.status = 'expired';
-        await reservation.save({ session });
-
-        releasedCount++;
-      }
-    });
-
-    return releasedCount;
-  } catch (error) {
-    console.error('Error releasing expired reservations:', error);
-    return 0;
-  } finally {
-    await session.endSession();
+    releasedCount++;
   }
+
+  return releasedCount;
 };
 
 export const cancelReservation = async (userId, reservationId) => {
-  const session = await mongoose.startSession();
+  const reservation = await Reservation.findOne({
+    _id: new mongoose.Types.ObjectId(reservationId),
+    userId: new mongoose.Types.ObjectId(userId),
+    status: 'active',
+  });
 
-  try {
-    let result;
-
-    await session.withTransaction(async () => {
-      const reservation = await Reservation.findOne({
-        _id: new mongoose.Types.ObjectId(reservationId),
-        userId: new mongoose.Types.ObjectId(userId),
-        status: 'active',
-      }).session(session);
-
-      if (!reservation) {
-        throw new Error('Reservation not found or already processed');
-      }
-
-      await Seat.updateMany(
-        {
-          eventId: reservation.eventId,
-          seatNumber: { $in: reservation.seatNumbers },
-          status: 'reserved',
-        },
-        { status: 'available' },
-        { session }
-      );
-
-      reservation.status = 'expired';
-      await reservation.save({ session });
-
-      result = reservation;
-    });
-
-    return result;
-  } catch (error) {
-    throw error;
-  } finally {
-    await session.endSession();
+  if (!reservation) {
+    throw new Error('Reservation not found or already processed');
   }
+
+  await Seat.updateMany(
+    {
+      eventId: reservation.eventId,
+      seatNumber: { $in: reservation.seatNumbers },
+      status: 'reserved',
+    },
+    { status: 'available' }
+  );
+
+  reservation.status = 'expired';
+  await reservation.save();
+
+  return reservation;
 };
