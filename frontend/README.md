@@ -1,16 +1,210 @@
-# React + Vite
+# Ticket Booking Flow
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack event ticket booking application built with the MERN stack. The application allows users to browse events, reserve seats for a limited time, and confirm bookings through a secure authentication system while preventing double bookings.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+### Authentication
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* User Registration
+* User Login
+* JWT-based Authentication
+* Protected Routes
 
-## Expanding the ESLint configuration
+### Event Management
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+* View All Events
+* View Event Details
+* Display Event Venue and Date
+
+### Seat Reservation
+
+* Interactive Seat Grid
+* Multiple Seat Selection
+* Reserve Seats for 10 Minutes
+* Reservation Countdown Timer
+* Automatic Reservation Expiry
+
+### Booking System
+
+* Confirm Reserved Seats
+* Prevent Double Booking
+* Transaction-Based Booking Logic
+* Real-Time Seat Availability Validation
+
+### Error Handling
+
+* Invalid Credentials
+* Expired Reservations
+* Unavailable Seats
+* Unauthorized Access
+* Network Error Handling
+
+---
+
+## Tech Stack
+
+### Frontend
+
+* React (Vite)
+* Tailwind CSS
+* React Router DOM
+* Axios
+
+### Backend
+
+* Node.js
+* Express.js
+* MongoDB
+* Mongoose
+* JWT Authentication
+* bcryptjs
+
+---
+
+## Project Structure
+
+```text
+Ticket Booking Flow
+│
+├── backend
+│   ├── src
+│   │   ├── config
+│   │   ├── controllers
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── routes
+│   │   └── server.js
+│   ├── .env
+│   └── package.json
+│
+└── frontend
+    ├── src
+    │   ├── components
+    │   ├── pages
+    │   ├── services
+    │   ├── context
+    │   └── App.jsx
+    └── package.json
+```
+
+---
+
+## Installation
+
+### Clone Repository
+
+```bash
+git clone https://github.com/your-username/ticket-booking-flow.git
+cd ticket-booking-flow
+```
+
+---
+
+## Backend Setup
+
+```bash
+cd backend
+npm install
+```
+
+Create a `.env` file:
+
+```env
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/eventbooking
+JWT_SECRET=your_secret_key
+```
+
+Start Backend:
+
+```bash
+npm run dev
+```
+
+---
+
+## Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## API Endpoints
+
+### Authentication
+
+```http
+POST /api/auth/register
+POST /api/auth/login
+```
+
+### Events
+
+```http
+GET /api/events
+GET /api/events/:id
+```
+
+### Reservations
+
+```http
+POST /api/reserve
+```
+
+### Bookings
+
+```http
+POST /api/bookings
+```
+
+---
+
+## Seat Status
+
+| Status    | Description                 |
+| --------- | --------------------------- |
+| Available | Seat can be reserved        |
+| Reserved  | Temporarily held for a user |
+| Booked    | Successfully purchased      |
+
+---
+
+## Key Technical Decisions
+
+### Double Booking Prevention
+
+MongoDB transactions and atomic updates are used to ensure that multiple users cannot reserve or book the same seat simultaneously.
+
+### Reservation Expiry
+
+Reservations automatically expire after 10 minutes. Expired reservations become invalid and seats are released back to the available pool.
+
+### Authentication
+
+JWT tokens are used to secure reservation and booking operations.
+
+---
+
+## Future Improvements
+
+* Payment Gateway Integration
+* Email Confirmation
+* Real-Time Seat Updates with WebSockets
+* Admin Dashboard
+* Event Creation & Management
+* Mobile Application
+
+---
+
+## Author
+
+Prashant Saud
+
+Built as a Full Stack Developer Hiring Assignment using the MERN Stack.
