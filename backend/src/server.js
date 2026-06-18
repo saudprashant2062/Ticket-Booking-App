@@ -3,9 +3,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import bcrypt from 'bcryptjs';
 
 import connectDB from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import Event from './models/Event.js';
+import Seat from './models/Seat.js';
+import User from './models/User.js';
 
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
@@ -15,11 +19,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '../.env') });
 
-connectDB();
-
 const app = express();
 
-// CORS FIX - Use function to handle origin matching
+// CORS FIX
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
@@ -28,9 +30,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -43,7 +43,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Handle preflight for all routes
 app.options('*', cors());
 
 app.use(express.json());
@@ -83,18 +82,86 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
-  console.log(`📡 API available at http://localhost:${PORT}/api`);
-  console.log(`\nAvailable endpoints:`);
-  console.log(`  POST /api/auth/register     - Register new user`);
-  console.log(`  POST /api/auth/login        - Login user`);
-  console.log(`  GET  /api/auth/me           - Get current user`);
-  console.log(`  GET  /api/events            - List all events`);
-  console.log(`  GET  /api/events/:id        - Get event details & seats`);
-  console.log(`  POST /api/reserve           - Reserve seats`);
-  console.log(`  POST /api/bookings          - Confirm booking`);
-  console.log(`  GET  /api/reservations/active - Get active reservation`);
-});
+
+// Start server and seed if empty
+const startServer = async () => {
+  try {
+    await connectDB();
+    
+    // AUTO-SEED IF DATABASE IS EMPTY
+    const eventCount = await Event.countDocuments();
+    if (eventCount === 0) {
+      console.log('Database empty, seeding...');
+      
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      await User.create({
+        name: 'Demo User',
+        email: 'demo@example.com',
+        password: hashedPassword,
+      });
+
+      const events = [
+        {
+          name: 'Avengers: Endgame - Special Screening',
+          dateTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          venue: 'IMAX Theater, Downtown',
+          totalSeats: 100,
+        },
+        {
+          name: 'Coldplay Music of the Spheres World Tour',
+          dateTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          venue: 'Wembley Stadium, London',
+          totalSeats: 80,
+        },
+        {
+          name: 'Hamilton - Broadway Musical',
+          dateTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          venue: 'Richard Rodgers Theatre, NYC',
+          totalSeats: 60,
+        },
+        {
+          name: 'NBA Finals 2026 - Game 1',
+          dateTime: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+          venue: 'Madison Square Garden, NYC',
+          totalSeats: 120,
+        },
+      ];
+
+      const createdEvents = await Event.insertMany(events);
+
+      const seatDocs = [];
+      const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
+      for (const event of createdEvents) {
+        const seatsPerRow = Math.floor(event.totalSeats / rows.length);
+        let seatCount = 0;
+
+        for (const row of rows) {
+          for (let col = 1; col <= seatsPerRow && seatCount < event.totalSeats; col++) {
+            seatDocs.push({
+              eventId: event._id,
+              seatNumber: `${row}${col}`,
+              status: 'available',
+            });
+            seatCount++;
+          }
+        }
+      }
+
+      await Seat.insertMany(seatDocs);
+      console.log('✅ Database seeded automatically!');
+    }
+
+    app.listen(PORT, () => {
+      console.log(`\n🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
+      console.log(`📡 API available at http://localhost:${PORT}/api`);
+    });
+  } catch (error) {
+    console.error('Server start error:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;
