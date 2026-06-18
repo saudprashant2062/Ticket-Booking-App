@@ -26,7 +26,6 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ROOT ROUTE - Add this here
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'BookMyTicket API is running' });
 });
