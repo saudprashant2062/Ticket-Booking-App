@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, resolve } from 'path';
 
 import User from '../models/User.js';
 import Event from '../models/Event.js';
@@ -11,10 +11,19 @@ import Seat from '../models/Seat.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config({ path: join(__dirname, '../../.env') });
+// FIX: Use absolute path from current working directory
+dotenv.config({ path: resolve(process.cwd(), '.env') });
+
+// DEBUG
+console.log('Current directory:', process.cwd());
+console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
 
 const seedDatabase = async () => {
   try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is not defined. Check your .env file.');
+    }
+    
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB for seeding...');
 
