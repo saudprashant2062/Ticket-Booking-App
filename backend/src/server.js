@@ -13,7 +13,7 @@ import reservationRoutes from './routes/reservationRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, '../.env') });
+dotenv.config({ path: join(__dirname, '.env') });
 
 connectDB();
 
@@ -25,6 +25,11 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({ success: true, message: 'BookMyTicket API is running' });
+});
 
 if (process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
