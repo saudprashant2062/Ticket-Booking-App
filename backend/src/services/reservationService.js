@@ -5,7 +5,6 @@ import Reservation from '../models/Reservation.js';
 const EXPIRY_MINUTES = parseInt(process.env.RESERVATION_EXPIRY_MINUTES) || 10;
 
 export const createReservation = async (userId, eventId, seatNumbers) => {
-  // Check if user already has active reservation
   const existingReservation = await Reservation.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     eventId: new mongoose.Types.ObjectId(eventId),
@@ -17,7 +16,6 @@ export const createReservation = async (userId, eventId, seatNumbers) => {
     throw new Error('You already have an active reservation for this event');
   }
 
-  // Atomically lock each seat
   const lockedSeats = [];
   for (const seatNumber of seatNumbers) {
     const seat = await Seat.findOneAndUpdate(
@@ -31,7 +29,6 @@ export const createReservation = async (userId, eventId, seatNumbers) => {
     );
 
     if (!seat) {
-      // Release any seats we already locked
       for (const locked of lockedSeats) {
         await Seat.findOneAndUpdate(
           { _id: locked._id },
@@ -44,7 +41,6 @@ export const createReservation = async (userId, eventId, seatNumbers) => {
     lockedSeats.push(seat);
   }
 
-  // Create reservation
   const expiresAt = new Date(Date.now() + EXPIRY_MINUTES * 60 * 1000);
   const reservation = await Reservation.create({
     userId: new mongoose.Types.ObjectId(userId),
@@ -69,7 +65,6 @@ export const confirmBooking = async (userId, reservationId) => {
   }
 
   if (new Date() > reservation.expiresAt) {
-    // Mark as expired and release seats
     reservation.status = 'expired';
     await reservation.save();
 
@@ -85,7 +80,6 @@ export const confirmBooking = async (userId, reservationId) => {
     throw new Error('Reservation has expired. Please select seats again.');
   }
 
-  // Verify seats are still reserved
   const seats = await Seat.find({
     eventId: reservation.eventId,
     seatNumber: { $in: reservation.seatNumbers },
@@ -99,7 +93,6 @@ export const confirmBooking = async (userId, reservationId) => {
     );
   }
 
-  // Mark seats as booked
   await Seat.updateMany(
     {
       eventId: reservation.eventId,
@@ -108,7 +101,6 @@ export const confirmBooking = async (userId, reservationId) => {
     { status: 'booked' }
   );
 
-  // Update reservation
   reservation.status = 'completed';
   await reservation.save();
 

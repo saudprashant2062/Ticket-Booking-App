@@ -11,12 +11,7 @@ import Seat from '../models/Seat.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// FIX: Use absolute path from current working directory
 dotenv.config({ path: resolve(process.cwd(), '.env') });
-
-// DEBUG
-console.log('Current directory:', process.cwd());
-console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
 
 const seedDatabase = async () => {
   try {

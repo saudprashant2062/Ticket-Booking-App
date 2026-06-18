@@ -145,7 +145,6 @@ const EventDetailsPage = () => {
   return (
     <div className="min-h-screen bg-black pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
         <button onClick={() => navigate('/events')} className="text-white/50 hover:text-white mb-6 flex items-center transition-colors">
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -153,7 +152,6 @@ const EventDetailsPage = () => {
           Back to Events
         </button>
 
-        {/* Event Header */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">{event?.name}</h1>
           <div className="flex flex-wrap gap-4 text-white/50">
@@ -172,21 +170,18 @@ const EventDetailsPage = () => {
           </div>
         </div>
 
-        {/* Reservation Timer */}
         {reservation && (
           <div className="mb-6 flex justify-center">
             <ReservationTimer expiresAt={reservation.expiresAt} onExpire={handleTimerExpire} />
           </div>
         )}
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-center">
             {error}
           </div>
         )}
 
-        {/* Seat Grid */}
         <div className="card p-6 mb-6 bg-white/5 border-white/10">
           <SeatGrid
             seats={seats}
@@ -196,7 +191,6 @@ const EventDetailsPage = () => {
           />
         </div>
 
-        {/* Selected Seats & Actions */}
         <div className="card p-6 bg-white/5 border-white/10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>

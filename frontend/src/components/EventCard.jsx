@@ -13,7 +13,6 @@ const EventCard = ({ event }) => {
     });
   };
 
-  // Generate a consistent gradient based on event name
   const getGradient = (name) => {
     const gradients = [
       'from-purple-600 to-pink-600',
@@ -32,7 +31,6 @@ const EventCard = ({ event }) => {
 
   return (
     <div className="card group">
-      {/* Image Placeholder with Gradient */}
       <div className={`h-48 bg-gradient-to-br ${getGradient(event.name)} relative overflow-hidden`}>
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all"></div>
         <div className="absolute bottom-4 left-4">
@@ -43,7 +41,6 @@ const EventCard = ({ event }) => {
       </div>
 
       <div className="p-5">
-        {/* Date */}
         <div className="flex items-center text-white/50 mb-3 text-sm">
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -51,12 +48,10 @@ const EventCard = ({ event }) => {
           {formatDate(event.dateTime)}
         </div>
 
-        {/* Event Name */}
         <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
           {event.name}
         </h3>
 
-        {/* Venue */}
         <div className="flex items-center text-white/40 mb-4 text-sm">
           <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -64,7 +59,6 @@ const EventCard = ({ event }) => {
           <span className="line-clamp-1">{event.venue}</span>
         </div>
 
-        {/* Action Button */}
         <Link
           to={`/events/${event._id}`}
           className="block w-full text-center py-2.5 rounded-lg border border-white/10 text-white/70 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all text-sm font-medium"

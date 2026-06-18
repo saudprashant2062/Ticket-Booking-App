@@ -48,7 +48,6 @@ const EventsPage = () => {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12">
         <div className="text-center mb-16">
           <h1 className="text-5xl sm:text-6xl font-bold text-white mb-4">
@@ -64,7 +63,6 @@ const EventsPage = () => {
           </div>
         </div>
 
-        {/* Section Title */}
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-white mb-2">
             Experience <span className="gradient-text">Exclusivity!</span>
@@ -72,7 +70,6 @@ const EventsPage = () => {
           <p className="text-white/50">Find the hottest events and venues in the town! Right here</p>
         </div>
 
-        {/* Events Grid */}
         {events.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-white/50 text-lg">No events available at the moment.</p>

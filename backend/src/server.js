@@ -21,7 +21,6 @@ dotenv.config({ path: join(__dirname, '../.env') });
 
 const app = express();
 
-// CORS FIX
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
@@ -29,14 +28,10 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-  origin: function (origin, callback) {
+  origin(origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -48,7 +43,6 @@ app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ROOT ROUTE
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'BookMyTicket API is running' });
 });
@@ -83,12 +77,9 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Start server and seed if empty
 const startServer = async () => {
   try {
     await connectDB();
-    
-    // AUTO-SEED IF DATABASE IS EMPTY
     const eventCount = await Event.countDocuments();
     if (eventCount === 0) {
       console.log('Database empty, seeding...');

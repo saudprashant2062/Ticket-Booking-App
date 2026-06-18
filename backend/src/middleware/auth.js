@@ -21,25 +21,23 @@ export const protect = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id);
+      req.user = await User.findById(decoded.id);
 
-      if (!user) {
+      if (!req.user) {
         return res.status(401).json({
           success: false,
           message: 'Not authorized - User not found',
         });
       }
 
-      req.user = user;
       next();
-    } catch (jwtError) {
+    } catch {
       return res.status(401).json({
         success: false,
         message: 'Not authorized - Invalid token',
       });
     }
-  } catch (error) {
-    console.error('Auth middleware error:', error);
+  } catch {
     return res.status(500).json({
       success: false,
       message: 'Server error during authentication',
